@@ -1,7 +1,5 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { StyleSheet } from 'react-native';
 import { createStackNavigator }  from '@react-navigation/stack'; 
 
 import { ListScreen } from '../../screens/library/mysounds/ListScreen.js'
@@ -9,6 +7,7 @@ import { RecordScreen } from '../../screens/library/mysounds/RecordScreen.js'
 
 const Stack = createStackNavigator();
 
+//Component for "my sounds" tab navigation
 export function MysoundsTab() {
   return (
     <Stack.Navigator>

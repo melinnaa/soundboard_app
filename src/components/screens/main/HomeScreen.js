@@ -2,15 +2,25 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, Touchable, TouchableOpacity, View } from 'react-native';
 
+//Component for main app interface
 export function HomeScreen({navigation}) {
 
     return (
         <View style={styles.container}>
             <TouchableOpacity onPress={() => navigation.navigate("Sampler")}>
-                <Text> Sampler </Text>
+                <View style={styles.button}>
+                    <Text> Sampler </Text>
+                </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate("Library")}>
-                <Text> Library </Text>
+                <View style={styles.button}>
+                    <Text> Library </Text>
+                </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+                <View style={styles.button}>
+                    <Text> Settings </Text>
+                </View>
             </TouchableOpacity>
         </View>
     );
@@ -19,8 +29,20 @@ export function HomeScreen({navigation}) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#242423',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
+  button: {
+    backgroundColor: "#f5cb5c",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 10,
+    height: 40,
+    width: 100,
+    marginVertical: 10,
+    marginHorizontal: 10
+  }
 });

@@ -7,23 +7,26 @@ import { HomeScreen } from './src/components/screens/main/HomeScreen.js'
 import { SamplerScreen } from './src/components/screens/main/SamplerScreen'
 import { EditScreen } from './src/components/screens/main/EditScreen'
 import { LibraryScreen } from './src/components/screens/main/LibraryScreen'
+import { SettingsScreen } from './src/components/screens/main/SettingsScreen'
 import { Provider } from "react-redux";
 import { PersistGate } from 'redux-persist/integration/react';
-
+import { useEffect } from 'react';
 import { store, persistor } from './src/store/store'
 
 const Stack = createStackNavigator();
 
 export default function App() {
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <NavigationContainer>
             <Stack.Navigator>
-                <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }}/>
-                <Stack.Screen name="Sampler" component={SamplerScreen} options={{ title: 'Sampler' }}/>
-                <Stack.Screen name="Edit" component={EditScreen} options={{ title: 'Edit' }}/>
-                <Stack.Screen name="Library" component={LibraryScreen} options={{ title: 'Library' }}/>
+                <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', headerStyle: {backgroundColor: "#f5cb5c"}}}/>
+                <Stack.Screen name="Sampler" component={SamplerScreen} options={{ title: 'Sampler', headerStyle: {backgroundColor: "#f5cb5c"}}}/>
+                <Stack.Screen name="Edit" component={EditScreen} options={{ title: 'Edit', headerStyle: {backgroundColor: "#f5cb5c"}}}/>
+                <Stack.Screen name="Library" component={LibraryScreen} options={{ title: 'Library', headerStyle: {backgroundColor: "#f5cb5c"}}}/>
+                <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings', headerStyle: {backgroundColor: "#f5cb5c"}}}/>
             </Stack.Navigator>
         </NavigationContainer>
       </PersistGate>

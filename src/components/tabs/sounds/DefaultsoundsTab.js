@@ -1,84 +1,157 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Button, FlatList, ScrollView, Image, TextInput } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, FlatList, SafeAreaView } from 'react-native';
 import { useSelector } from "react-redux";
 import { defaultSelector } from "../../../slices/SoundsSlice";
-import { editSelector } from "../../../slices/EditSlice";
+import { editSelector, setEditing } from "../../../slices/EditSlice";
 import { useDispatch } from "react-redux";
 import { updateSound } from '../../../slices/PadSlice';
+import { useState } from 'react';
 import { Audio } from "expo-av";
 
+//Component displaying all default sounds
 export function DefaultsoundsTab({navigation}) {
 
     const defaultSounds = useSelector(defaultSelector);
     const editing = useSelector(editSelector);
+    const [playbackObject, setPlayBackObject] = useState();
+    const [playing, setPlaying] = useState({isPlaying: false, idSound: undefined});
     const dispatch = useDispatch();
 
+    //Play the sound selected
     const playSound = async(selectedSound) => {
-        console.log(selectedSound);
-        const { sound } = await Audio.Sound.createAsync(selectedSound);
-        await sound.playAsync();
+        const object = preparePlayback(selectedSound.download);
+        Promise.resolve(object).then((response) => {
+            setPlayBackObject(response);
+            setPlaying({isPlaying: true, idSound: selectedSound.id});
+        });   
     };
 
+    //Stop the playing sound
+    const stopSound = async () => {
+        await playbackObject.unloadAsync();
+        setPlaying({isPlaying: false, idSound: undefined});
+    };
+
+    //Load the audio file
+    const preparePlayback = async(selectedSound) => {
+        const { sound: playbackObject } = await Audio.Sound.createAsync(selectedSound);
+        playbackObject.setOnPlaybackStatusUpdate((playbackStatus) => {
+            if (playbackStatus.didJustFinish){
+                setPlaying({isPlaying: false, idSound: undefined});
+            }
+        });
+        await playbackObject.playAsync(); 
+        return playbackObject;  
+    }
+
+    //Choose the sound for editing
+    const chooseSound = (selectedSound) => {
+        const index = editing.btn_id;
+        dispatch(updateSound({index: index, sound: selectedSound}));
+        navigation.navigate("Edit", {btn: {btn_id: index, sound: selectedSound}});
+    }
+
     return (
-        <ScrollView>
+        <SafeAreaView style={styles.container}>
             <FlatList
-            data={defaultSounds}
-            renderItem=
-            {
+                data={defaultSounds}
+                renderItem=
+                {
                 ({item}) => (   
-                <View >
+                <View style={styles.line}>
                     <Text value={item.name} style={styles.text}> {item.name} </Text>
-                    <TouchableOpacity
-                    style={[styles.button, styles.searchLine]}
-                    onPress={() => playSound(item.download)}>
-                        <Text>Play</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                    style={[styles.button, styles.searchLine]}
-                    onPress={() => chooseSound(item)}>
-                        <Text>Choose</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionDiv}>
+                        {playing.idSound != item.id &&
+                        <TouchableOpacity
+                        onPress={() => playSound(item)}>
+                            <View style={[styles.button]}>
+                                <Text>Play</Text>
+                            </View>
+                        </TouchableOpacity>
+                        }
+                        {playing.idSound == item.id &&
+                        <TouchableOpacity
+                        onPress={() => stopSound()}>
+                            <View style={[styles.button]}>
+                                <Text>Stop</Text>
+                            </View>
+                        </TouchableOpacity>
+                        }
+                        {editing.editing == true &&
+                        <TouchableOpacity
+                        onPress={() => chooseSound(item)}>
+                            <View style={[styles.button]}>
+                                <Text>Choose</Text>
+                            </View>
+                        </TouchableOpacity>
+                        }   
+                    </View>
                 </View>
             )}
-            keyExtractor={item => item.id}/>   
-        </ScrollView>
+            keyExtractor={item => item.id.toString()}/>   
+        </SafeAreaView>
     );
-
-    function chooseSound(sound){
-        const index = editing.btn_id;
-        dispatch(updateSound({index: index, sound: sound}));
-        navigation.navigate("Edit");
-    }
 }
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
-        height: '100%'
-    },
-
-    textInput: {
-        fontSize: 18,
-        padding: 8,
-    },
-
-    searchBlock: {
-        margin: 0,
-        shadowOffset:{  width: 0,  height: 20,  },
-        shadowColor: 'black',
-        shadowOpacity: 0.3,
-        shadowRadius: 15
+        flex: 1,
+        backgroundColor: '#242423',
+        padding: 10,
     },
 
     text: {
-        fontSize: 18,
-        padding: 4,
+        color: 'white'
     },
 
-    searchLine: {
+    line: {
+        backgroundColor: '#242423',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        flexWrap: "wrap"
-    }
+        alignItems: 'center'
+    },
 
+    actionDiv: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+
+    button: {
+        backgroundColor: "#f5cb5c",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        padding: 10,
+        height: 40,
+        marginVertical: 10,
+        marginHorizontal: 10
+    },
+
+    searchBtn: {
+        backgroundColor: "#f5cb5c",
+        justifyContent: "center",
+        padding: 10,
+        height: 40,
+        marginVertical: 10,
+        marginHorizontal: 10
+    },
+
+    delete_btn: {
+        backgroundColor: "red",
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 75
+    },
+
+    delete_label: {
+        color: "white",
+    },
+
+    rowBack: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 0
+    }
 });

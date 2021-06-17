@@ -1,24 +1,32 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { State } from "react-native-gesture-handler";
 
+/* 
+* the editSlice enables to see if the app is editing a sound 
+* so the library can display the button "choose" in lines sound
+*/
 export const EditSlice = createSlice({
     name: "edit",
-    initialState: [{
-        editing: true,
-        btn_id: ""
-    }],
+
+    /*
+    * btn_id: -1 -> no button in edition
+    * editing: false -> no editing
+    */
+    initialState: {
+        btn_id: -1,
+        editing: false
+    },
     reducers: {
-        toggleEdit: (state, action) => {
-            console.log(action.payload);
-            return state.editing != action.payload ? !state.editing : state.editing;
-        },
-        setBtnId: (state, action) => {
-            console.log(action.payload);
-            return {...state, btn_id: action.payload}
+        //Set editing state with new btn_id
+        setEditing: (state, action) => {
+            return state = {btn_id: action.payload.btn_id, editing: action.payload.editing};
         }
     },
 });
   
-export const { toggleEdit, setBtnId } = EditSlice.actions;
+export const { setEditing } = EditSlice.actions;
 export default EditSlice.reducer;
-export const editSelector = (state) => state.edit;
+
+//Return editing state
+export const editSelector = (state) =>  {
+    return state.edit;
+}

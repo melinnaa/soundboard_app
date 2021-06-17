@@ -8,6 +8,7 @@ import { SearchScreen } from '../../screens/library/freesounds/SearchScreen.js'
 
 const Stack = createStackNavigator();
 
+//Component for freesounds tab navigation
 export function FreesoundsTab() {
   return (
     <Stack.Navigator>

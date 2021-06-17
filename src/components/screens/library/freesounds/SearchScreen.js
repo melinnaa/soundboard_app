@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, TouchableOpacity, View, Button, FlatList, ScrollView, Image, TextInput } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Button, FlatList, ScrollView, Image, TextInput, SafeAreaView } from 'react-native';
 import React from 'react';
 import axios from 'axios';
 import { useState } from 'react';
@@ -8,105 +8,143 @@ import { addSound } from '../../../../slices/SoundsSlice';
 import { Audio } from "expo-av";
 import * as FS from "expo-file-system";
 
-export function SearchScreen({navigation}) {
+//Component for searching a sound in the freesound API
+export function SearchScreen() {
     const [sounds, setListSounds] = useState();
     const [soundInput, setSoundInput] = useState("");
     const [progress, setProgress] = useState({downloadProgress: ""});
+    const [error_msg, setErrorMsg] = useState("");
     const dispatch = useDispatch();
 
+    const [playbackObject, setPlayBackObject] = useState();
+    const [playing, setPlaying] = useState({isPlaying: false, idSound: undefined});
+
+    //Play the sound selected
     const playSound = async(selectedSound) => {
-        console.log(selectedSound);
-        const { sound } = await Audio.Sound.createAsync({uri: selectedSound});
-        console.log("cc?");
-        await sound.playAsync();
+        const object = preparePlayback(selectedSound.previews["preview-hq-mp3"]);
+        Promise.resolve(object).then((response) => {
+            setPlayBackObject(response);
+            setPlaying({isPlaying: true, idSound: selectedSound.id});
+        });   
     };
 
+    //Stop the playing sound
+    const stopSound = async () => {
+        await playbackObject.unloadAsync();
+        setPlaying({isPlaying: false, idSound: undefined});
+    };
+
+    //Load the sound selected
+    const preparePlayback = async(selectedSound) => {
+        const { sound: playbackObject } = await Audio.Sound.createAsync({uri: selectedSound});
+        playbackObject.setOnPlaybackStatusUpdate((playbackStatus) => {
+            if (playbackStatus.didJustFinish){
+                setPlaying({isPlaying: false, idSound: undefined});
+            }
+        });
+        await playbackObject.playAsync(); 
+        return playbackObject;  
+    }
+
+    //Callback for dowloading process
     const callback = downloadProgress => {
         const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
         setProgress({downloadProgress: progress})
     };
     
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-
+        <SafeAreaView style={styles.container}>
             <View style={styles.searchBlock}>
-                <TextInput placeholder="Search sound" placeholderTextColor="gray" value={soundInput} onChangeText={setSoundInput} style={[styles.textInput]}></TextInput>
-                <Button onPress={() => findSound(soundInput)} title={"Search"} color="#C4449F"></Button>
+                <TextInput placeholder="Search sound" placeholderTextColor="gray" value={soundInput} onChangeText={setSoundInput} style={{color:"white"}}></TextInput>
+                <TouchableOpacity 
+                    style={styles.button}
+                    onPress={() => findSound(soundInput)}>
+                        <Text>Search</Text>
+                </TouchableOpacity>  
             </View>
-
+            <Text> {error_msg} </Text>
             <FlatList
             data={sounds}
             renderItem={({item}) => 
-                <View style={styles.searchLine}>
-                    <Text value={item.name} style={styles.text}>{item.name}</Text>
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() => handleSoundSelected(item)}>
-                            <Text>Add</Text>
-                    </TouchableOpacity>  
-                    <TouchableOpacity
-                        style={[styles.button, styles.searchLine]}
-                        onPress={() => playSound(item.previews["preview-hq-mp3"])}>
-                            <Text>Play</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.button, styles.searchLine]}
-                        onPress={() => stopSound(item.previews["preview-hq-mp3"])}>
-                            <Text>Stop</Text>
-                    </TouchableOpacity>
+                <View style={styles.line}>
+                    <Text value={item.name} style={{color: "white"}}>{item.name}</Text>
+                    <View style={styles.actionDiv}>
+                        <TouchableOpacity
+                            onPress={() => handleSoundSelected(item)}>
+                                <View style={[styles.button]}>
+                                    <Text>Add</Text>
+                                </View>
+                        </TouchableOpacity>  
+                        {playing.idSound != item.id &&
+                        <TouchableOpacity
+                            onPress={() => playSound(item)}>
+                                <View style={[styles.button]}>
+                                    <Text>Play</Text>
+                                </View>
+                        </TouchableOpacity>
+                        }
+                        {playing.idSound == item.id &&
+                        <TouchableOpacity
+                            onPress={() => stopSound()}>
+                                <View style={[styles.button]}>
+                                    <Text>Stop</Text>
+                                </View>
+                        </TouchableOpacity>
+                        }
+                    </View>
                 </View>}
-            keyExtractor={item => item.id}
-            />
-
-        </ScrollView>
+            keyExtractor={item => item.id.toString()}/>
+        </SafeAreaView>
     );
     
+    //Download the sound selected
     async function handleSoundSelected(item){
-        let sound = formatSound(item);
 
         const downloadResumable = FS.createDownloadResumable(
-            sound.download,
+            item.previews["preview-hq-mp3"],
             FS.documentDirectory + item.id,
             {},
             callback
         );
-
-        console.log(downloadResumable);
-        console.log(FS.documentDirectory+item.id);
         
+        let sound = undefined;
         try {
             const { uri } = await downloadResumable.downloadAsync();
-            console.log('Finished downloading to ', uri);
+            sound = formatSound(item, uri);
         } catch (e) {
             console.error(e);
         }
-
-        /*const { uri: localUri } = await FS.downloadAsync(sound.download, FS.documentDirectory + 'name.ext');
-        console.log(localUri);*/
+        
         dispatch(addSound(sound));
         alert('Sound added in your library')
      }
 
-    function formatSound(item){
+    //Return a sound object with selected properties
+    function formatSound(item, uri){
         return {
             id: item.id,
             name: item.name,
-            download: item.download,
+            download: uri,
             type: 'freesound'
         }
     }
 
+    //Find a sound 
     function findSound(input){
         const sounds = findSoundsByInput(input);
         Promise.resolve(sounds).then((response) => {
             setListSounds(response);
+        })
+        .catch((err) => {
+            console.log("network Error");
+            setErrorMsg("Network error: Please check your internet connection");
         });         
     }
 
+    //Api call to retrieve sounds
     async function findSoundsByInput(input){
     try {
         const resp = await axios.get("http://freesound.org/apiv2/search/text/?query="+input+"&fields=id,name,previews,download&token=jY8inepynCSYGuKiXXmcWfVk53iW8ww9SUDRSJ5V")
-        console.log(resp.data);
         return resp.data.results
     } catch (err) {
         console.error(err);
@@ -115,32 +153,43 @@ export function SearchScreen({navigation}) {
  }
  
  const styles = StyleSheet.create({
-     container: {
-         width: '100%',
-         height: '100%'
-     },
- 
-     textInput: {
-         fontSize: 18,
-         padding: 8
-     },
- 
-     searchBlock: {
-         margin: 0,
-         shadowOffset:{  width: 0,  height: 20,  },
-         shadowColor: 'black',
-         shadowOpacity: 0.3,
-         shadowRadius: 15
-     },
- 
-     text: {
-         fontSize: 18,
-         padding: 4
-     },
- 
-     searchLine: {
-         flexDirection: 'row',
-         justifyContent: 'space-between',
-         flexWrap: "wrap"
-     } 
+    container: {
+        backgroundColor: '#242423',
+        height:'100%'
+    },
+
+    line: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: "white"
+    },
+
+    actionDiv: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+
+    searchBlock: {
+        flexDirection: 'row',
+        alignSelf: 'center'
+    },
+
+    searchLine: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: "wrap"
+    },
+
+    button: {
+        backgroundColor: "#f5cb5c",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        padding: 10,
+        height: 40,
+        marginVertical: 10,
+        marginHorizontal: 5
+    }
  });

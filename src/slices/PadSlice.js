@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+//PadSlice contains the state of the user sampler
 export const PadSlice = createSlice({
     name: "pad",
     initialState:  [
@@ -8,7 +9,8 @@ export const PadSlice = createSlice({
             sound: {
                 id: 0,
                 name: "Cymbal",
-                download: require("../../assets/defaultSounds/cymbal.wav")
+                download: require("../../assets/defaultSounds/cymbal.wav"),
+                type: "default"
             }
         },
         {
@@ -55,10 +57,38 @@ export const PadSlice = createSlice({
                 download: require("../../assets/defaultSounds/taiko.wav"),
                 type: "default"
             }
+        },
+        {
+            btn_id: 6,
+            sound: {
+                id: 5,
+                name: "Taiko",
+                download: require("../../assets/defaultSounds/taiko.wav"),
+                type: "default"
+            }
+        },
+        {
+            btn_id: 7,
+            sound: {
+                id: 5,
+                name: "Taiko",
+                download: require("../../assets/defaultSounds/taiko.wav"),
+                type: "default"
+            }
+        },
+        {
+            btn_id: 8,
+            sound: {
+                id: 5,
+                name: "Taiko",
+                download: require("../../assets/defaultSounds/taiko.wav"),
+                type: "default"
+            }
         }
     ],
 
     reducers: {
+        //Replace the sound of a pad by the sound passed in parameter
         updateSound (state,action) {
             state.filter((btn) => btn.btn_id == action.payload.index)[0].sound = action.payload.sound
         }
@@ -67,4 +97,6 @@ export const PadSlice = createSlice({
   
 export const { updateSound } = PadSlice.actions;
 export default PadSlice.reducer;
+
+//Return pads state
 export const padSelector = (state) => state.pad;

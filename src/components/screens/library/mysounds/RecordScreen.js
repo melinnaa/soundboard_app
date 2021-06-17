@@ -1,60 +1,70 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, Touchable, TouchableOpacity, View, Button } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
 import { Audio } from "expo-av";
 import { useState } from 'react';
 import { useDispatch } from "react-redux";
 import { addSound } from '../../../../slices/SoundsSlice';
+import { useSelector } from "react-redux";
+import { nextIdSelector } from "../../../../slices/SoundsSlice";
 
-export function RecordScreen({navigation}) {
+//Component for recording sounds
+export function RecordScreen() {
 
   const [recording, setRecording] = useState();
+  const [showModal, setShowModal] = useState(false);
+  const [nameInput, setNameInput] = useState();
+  const nextId = useSelector(nextIdSelector);
   const dispatch = useDispatch();
-/*const { ios, android } = Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-await recorder.prepareToRecordAsync( {
-	android: android,
-	ios: {
-		...ios,
-		extension: '.mp4',
-		outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC
-	}
-
-} )*/
+  
+  //Start recording
   async function startRecording() {
     try {
-      console.log('Requesting permissions..');
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       }); 
 
-      console.log('Starting recording..');
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
       await recording.startAsync(); 
       setRecording(recording);
-      console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
     }
   }
 
+  //Stop recording
   async function stopRecording() {
-    console.log('Stopping recording..');
-    setRecording(undefined);
     await recording.stopAndUnloadAsync();
-    const uri = recording.getURI(); 
-    const formatedSound = formatSound(recording.getURI);
-    dispatch(addSound(formatedSound));
-
-    console.log('Recording stopped and stored at', uri);
+    setShowModal(true);
+ 
   }
 
-  function formatSound(soundURI){
+  //Save the sound previously recorded
+  function save(){
+    if (nameInput && recording){
+      const uri = recording.getURI(); 
+      const formatedSound = formatSound(uri, nameInput);
+      setNameInput(undefined);
+      setRecording(undefined);
+      dispatch(addSound(formatedSound));
+      setShowModal(false);
+    }
+  }
+
+  //Cancel the previous sound recorded
+  function cancel(){
+    setNameInput(undefined);
+    setRecording(undefined);
+    setShowModal(false);
+  }
+
+  //Returns an object with specific properties
+  function formatSound(soundURI, name){
     return {
-      id: 1,
-      name: soundURI,
+      id: nextId,
+      name: name,
       download: soundURI,
       type: "mysound"
     }
@@ -62,10 +72,29 @@ await recorder.prepareToRecordAsync( {
 
   return (
     <View style={styles.container}>
-      <Button
-        title={recording ? 'Stop Recording' : 'Start Recording'}
-        onPress={recording ? stopRecording : startRecording}
-      />
+      {showModal == false &&
+      <TouchableOpacity onPress={recording ? stopRecording : startRecording} style={styles.button}>
+        <View>
+          <Text>
+            {recording ? 'Stop Recording' : 'Start Recording'}
+          </Text>
+        </View>
+      </TouchableOpacity>}
+  
+      {showModal == true &&
+      <View>      
+        <TextInput value={nameInput} placeholder="Recording name" onChangeText={setNameInput} placeholderTextColor='grey' style={styles.text}></TextInput>
+        <TouchableOpacity onPress={()=> save()}>
+          <View style={styles.button}>
+            <Text>OK</Text>
+          </View>
+        </TouchableOpacity>    
+        <TouchableOpacity onPress={()=> cancel()}>
+          <View style={styles.button}>
+            <Text>Cancel</Text>
+          </View>
+        </TouchableOpacity>      
+      </View>}
     </View>
   );
 }
@@ -73,8 +102,24 @@ await recorder.prepareToRecordAsync( {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#242423',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
+  button: {
+    backgroundColor: "#f5cb5c",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 10,
+    height: 40,
+    marginVertical: 10,
+    marginHorizontal: 10
+  },
+
+  text: {
+    color: 'white'
+  }
+
 });

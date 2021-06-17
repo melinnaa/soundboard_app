@@ -1,7 +1,6 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 
@@ -11,36 +10,48 @@ import { DefaultsoundsTab } from '../../tabs/sounds/DefaultsoundsTab.js'
 
 const Tab = createBottomTabNavigator();
 
+//Component for the sound library (contains a tab navigator)
 export function LibraryScreen() {
 
     const customTabBarStyle = {
         activeTintColor: 'black',
         inactiveTintColor: 'gray',
         style: {backgroundColor: 'white', paddingBottom: 20, paddingTop:20, height: 65},
+        showLabel:false,
+        style:{
+            backgroundColor:"#f8f8f8",
+            paddingBottom: 5,
+            paddingLeft: 5,
+            paddingRight: 5,
+            paddingTop: 5,
+            height: 70,
+        }
     }
 
     return (
         <Tab.Navigator
             tabBarOptions={customTabBarStyle}
+            barStyle={{ backgroundColor: "#f5cb5c" }}
+            options={{headerStyle: {backgroundColor: "#f5cb5c"}}}
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
                 switch (route.name) {
                     case "MySounds":
-                    iconName = focused ? "list-circle" : "list-circle-outline";
+                    iconName = focused ? "mic" : "mic-outline";
                     break;
                     case "FreeSounds":
-                    iconName = focused ? "list-circle" : "list-circle-outline";
+                    iconName = focused ? "radio" : "radio-outline";
                     break;
                     case "DefaultSounds":
-                    iconName = focused ? "list-circle" : "list-circle-outline";
+                    iconName = focused ? "musical-note" : "musical-note-outline";
                     break;
                     default:
                     iconName = "ban";
                     break;
                 }
 
-                return <Ionicons name={iconName} size={size} color={color}/>;
+                return <Ionicons name={iconName} size={30} color={color}/>;
                 },
             })}
             >
@@ -58,4 +69,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
 });
